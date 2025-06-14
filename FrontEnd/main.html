@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Service - Text to Speech Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            transition: all 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .step {
+            margin-bottom: 25px;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+            transform: translateY(10px);
+        }
+
+        .step.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn.loading {
+            color: transparent;
+        }
+
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 150px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .text-input.enabled {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .word-counter {
+            text-align: right;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .word-counter.warning {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .audio-output {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 2px dashed #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .audio-output.has-audio {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .audio-player {
+            width: 100%;
+            margin: 15px 0;
+            border-radius: 25px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            margin-top: 15px;
+        }
+
+        .download-btn:hover {
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            margin-top: 15px;
+        }
+
+        .refresh-btn:hover {
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .success-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 TTS Service</h1>
+            <p>Convert your text to natural speech</p>
+        </div>
+
+        <div id="step1" class="step active">
+            <div class="step-label">
+                <span class="step-number">1</span>
+                Start Your Journey
+            </div>
+            <button id="enterBtn" class="btn">Enter</button>
+        </div>
+
+        <div id="step2" class="step">
+            <div class="step-label">
+                <span class="step-number">2</span>
+                Enter Your Text
+            </div>
+            <textarea 
+                id="textInput" 
+                class="text-input" 
+                placeholder="Type your text here... (Maximum 150 words)"
+                maxlength="1000"
+            ></textarea>
+            <div id="wordCounter" class="word-counter">0 / 150 words</div>
+        </div>
+
+        <div id="step3" class="step">
+            <div class="step-label">
+                <span class="step-number">3</span>
+                Convert to Speech
+            </div>
+            <button id="convertBtn" class="btn" disabled>Convert to Speech</button>
+        </div>
+
+        <div id="step4" class="step">
+            <div class="step-label">
+                <span class="step-number">4</span>
+                Your Audio Output
+            </div>
+            <div id="successMessage" class="success-message">
+                ✅ Your text has been successfully converted to speech!
+            </div>
+            <div id="audioOutput" class="audio-output">
+                <p>🎵 Your audio file will appear here</p>
+                <audio id="audioPlayer" class="audio-player" controls style="display: none;">
+                    <source id="audioSource" src="" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <button id="downloadBtn" class="btn download-btn" style="display: none;">
+                    📥 Download Audio
+                </button>
+            </div>
+        </div>
+
+        <div class="step">
+            <button id="refreshBtn" class="btn refresh-btn">🔄 Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        class TTSInterface {
+            constructor() {
+                this.currentStep = 1;
+                this.isConverting = false;
+                this.audioBlob = null;
+                this.initializeElements();
+                this.bindEvents();
+            }
+
+            initializeElements() {
+                this.enterBtn = document.getElementById('enterBtn');
+                this.textInput = document.getElementById('textInput');
+                this.wordCounter = document.getElementById('wordCounter');
+                this.convertBtn = document.getElementById('convertBtn');
+                this.audioOutput = document.getElementById('audioOutput');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.audioSource = document.getElementById('audioSource');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.refreshBtn = document.getElementById('refreshBtn');
+                this.successMessage = document.getElementById('successMessage');
+            }
+
+            bindEvents() {
+                this.enterBtn.addEventListener('click', () => this.handleEnterClick());
+                this.textInput.addEventListener('input', () => this.handleTextInput());
+                this.convertBtn.addEventListener('click', () => this.handleConvertClick());
+                this.downloadBtn.addEventListener('click', () => this.handleDownloadClick());
+                this.refreshBtn.addEventListener('click', () => this.handleRefreshClick());
+            }
+
+            handleEnterClick() {
+                this.enterBtn.classList.add('loading');
+                this.enterBtn.disabled = true;
+
+                // Start library installation
+                this.installLibraries();
+            }
+
+            async installLibraries() {
+                try {
+                    const response = await fetch('http://localhost:5000/api/start-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        console.log('Libraries installed:', result.results);
+                        this.activateStep(2);
+                        this.textInput.classList.add('enabled');
+                        this.textInput.focus();
+                    } else {
+                        alert(`Installation failed: ${result.message}`);
+                    }
+                    
+                } catch (error) {
+                    console.error('Backend connection error:', error);
+                    alert('Could not connect to backend server. Make sure the Python server is running on localhost:5000');
+                    
+                    // Continue with frontend-only mode
+                    this.activateStep(2);
+                    this.textInput.classList.add('enabled');
+                    this.textInput.focus();
+                } finally {
+                    this.enterBtn.classList.remove('loading');
+                    this.enterBtn.disabled = false;
+                }
+            }
+
+            handleTextInput() {
+                const text = this.textInput.value.trim();
+                const words = text ? text.split(/\s+/).filter(word => word.length > 0) : [];
+                const wordCount = words.length;
+
+                this.updateWordCounter(wordCount);
+                
+                if (wordCount > 0 && wordCount <= 150) {
+                    setTimeout(() => {
+                        if (!this.isConverting) {
+                            this.activateStep(3);
+                            this.convertBtn.disabled = false;
+                        }
+                    }, 2000);
+                } else {
+                    this.convertBtn.disabled = true;
+                    this.deactivateStep(3);
+                }
+            }
+
+            updateWordCounter(count) {
+                this.wordCounter.textContent = `${count} / 150 words`;
+                this.wordCounter.classList.toggle('warning', count > 150);
+                
+                if (count > 150) {
+                    this.convertBtn.disabled = true;
+                    this.deactivateStep(3);
+                }
+            }
+
+            async handleConvertClick() {
+                if (this.isConverting) return;
+                
+                this.isConverting = true;
+                this.convertBtn.classList.add('loading');
+                this.convertBtn.disabled = true;
+
+                try {
+                    // Simulate TTS conversion process
+                    await this.simulateTTSConversion();
+                    
+                    this.activateStep(4);
+                    this.showSuccessMessage();
+                    this.displayAudioOutput();
+                } catch (error) {
+                    console.error('TTS conversion failed:', error);
+                    alert('Conversion failed. Please try again.');
+                } finally {
+                    this.isConverting = false;
+                    this.convertBtn.classList.remove('loading');
+                }
+            }
+
+            async simulateTTSConversion() {
+                const text = this.textInput.value.trim();
+                
+                try {
+                    // Save text to backend
+                    const saveResponse = await fetch('http://localhost:5000/api/save-text', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ text: text })
+                    });
+                    
+                    if (!saveResponse.ok) {
+                        throw new Error('Failed to save text');
+                    }
+                    
+                    // Convert to speech
+                    const convertResponse = await fetch('http://localhost:5000/api/convert-speech', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    const result = await convertResponse.json();
+                    
+                    if (!result.success) {
+                        throw new Error(result.message);
+                    }
+                    
+                    if (result.audio_file) {
+                        // Download the audio file
+                        const audioResponse = await fetch(`http://localhost:5000/api/download-audio/${result.audio_file}`);
+                        if (audioResponse.ok) {
+                            this.audioBlob = await audioResponse.blob();
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('TTS Conversion Error:', error);
+                    // Fallback to demo audio if backend fails
+                    this.audioBlob = await this.createDummyAudio();
+                    throw error;
+                }
+            }
+
+            async createDummyAudio() {
+                // Create a simple beep tone for demonstration
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const duration = 2;
+                const sampleRate = audioContext.sampleRate;
+                const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+                const data = buffer.getChannelData(0);
+
+                for (let i = 0; i < data.length; i++) {
+                    data[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.1;
+                }
+
+                const audioBlob = new Blob([this.bufferToWave(buffer)], { type: 'audio/wav' });
+                return audioBlob;
+            }
+
+            bufferToWave(buffer) {
+                const length = buffer.length;
+                const arrayBuffer = new ArrayBuffer(44 + length * 2);
+                const view = new DataView(arrayBuffer);
+                const data = buffer.getChannelData(0);
+
+                // WAV header
+                const writeString = (offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + length * 2, true);
+                writeString(8, 'WAVE');
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, buffer.sampleRate, true);
+                view.setUint32(28, buffer.sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeString(36, 'data');
+                view.setUint32(40, length * 2, true);
+
+                // Convert float samples to 16-bit PCM
+                let offset = 44;
+                for (let i = 0; i < length; i++) {
+                    const sample = Math.max(-1, Math.min(1, data[i]));
+                    view.setInt16(offset, sample * 0x7FFF, true);
+                    offset += 2;
+                }
+
+                return arrayBuffer;
+            }
+
+            showSuccessMessage() {
+                this.successMessage.classList.add('show');
+                setTimeout(() => {
+                    this.successMessage.classList.remove('show');
+                }, 3000);
+            }
+
+            displayAudioOutput() {
+                if (this.audioBlob) {
+                    const audioUrl = URL.createObjectURL(this.audioBlob);
+                    this.audioSource.src = audioUrl;
+                    this.audioPlayer.load();
+                    this.audioPlayer.style.display = 'block';
+                    this.downloadBtn.style.display = 'block';
+                    this.audioOutput.classList.add('has-audio');
+                    this.audioOutput.querySelector('p').textContent = '🎵 Your audio is ready!';
+                }
+            }
+
+            handleDownloadClick() {
+                if (this.audioBlob) {
+                    const url = URL.createObjectURL(this.audioBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `tts-audio-${Date.now()}.wav`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            }
+
+            handleRefreshClick() {
+                // Reset all states
+                this.currentStep = 1;
+                this.isConverting = false;
+                this.audioBlob = null;
+
+                // Reset UI elements
+                this.textInput.value = '';
+                this.textInput.classList.remove('enabled');
+                this.updateWordCounter(0);
+                this.convertBtn.disabled = true;
+                this.audioPlayer.style.display = 'none';
+                this.downloadBtn.style.display = 'none';
+                this.audioOutput.classList.remove('has-audio');
+                this.audioOutput.querySelector('p').textContent = '🎵 Your audio file will appear here';
+                this.successMessage.classList.remove('show');
+
+                // Reset steps
+                this.deactivateAllSteps();
+                this.activateStep(1);
+
+                // Clear any audio URLs
+                if (this.audioSource.src) {
+                    URL.revokeObjectURL(this.audioSource.src);
+                    this.audioSource.src = '';
+                }
+            }
+
+            activateStep(stepNumber) {
+                const step = document.getElementById(`step${stepNumber}`);
+                if (step) {
+                    step.classList.add('active');
+                }
+            }
+
+            deactivateStep(stepNumber) {
+                const step = document.getElementById(`step${stepNumber}`);
+                if (step) {
+                    step.classList.remove('active');
+                }
+            }
+
+            deactivateAllSteps() {
+                for (let i = 1; i <= 4; i++) {
+                    this.deactivateStep(i);
+                }
+            }
+        }
+
+        // Initialize the TTS interface when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TTSInterface();
+        });
+    </script>
+</body>
+</html>
