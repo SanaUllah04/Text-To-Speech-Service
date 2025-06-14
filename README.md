@@ -1,7 +1,7 @@
 # Text-to-Speech Application
 
 <!-- Add your frontend screenshot/demo image here -->
-![TTS Application Demo](path/to/your/screenshot.png)
+![TTS Application Demo](./TTS_Webpage.png)
 
 ## Overview
 
