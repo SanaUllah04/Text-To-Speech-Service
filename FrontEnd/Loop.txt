@@ -1,0 +1,16 @@
+
+
+texts = ["",]
+
+
+
+
+chat = ChatTTS.Chat()
+
+chat.load()
+
+
+wavs = chat.infer(texts)
+
+
+torchaudio.save("C:\\Users\\SanaUllah\\Desktop\\TTS\\TTS_Output\\audio.wav", torch.from_numpy(wavs[0]).unsqueeze(0), 24000)

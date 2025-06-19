@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Service - Text to Speech Converter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 TTS Service</h1>
+            <p>Convert your text to natural speech</p>
+        </div>
+
+        <div id="step1" class="step active">
+            <div class="step-label">
+                <span class="step-number">1</span>
+                Start Your Journey
+            </div>
+            <button id="enterBtn" class="btn">Enter</button>
+        </div>
+
+        <div id="step2" class="step">
+            <div class="step-label">
+                <span class="step-number">2</span>
+                Enter Your Text
+            </div>
+            <textarea 
+                id="textInput" 
+                class="text-input" 
+                placeholder="Type your text here... (Maximum 150 words)"
+                maxlength="1000"
+            ></textarea>
+            <div id="wordCounter" class="word-counter">0 / 150 words</div>
+        </div>
+
+        <div id="step3" class="step">
+            <div class="step-label">
+                <span class="step-number">3</span>
+                Convert to Speech
+            </div>
+            <button id="convertBtn" class="btn" disabled>Convert to Speech</button>
+        </div>
+
+        <div id="step4" class="step">
+            <div class="step-label">
+                <span class="step-number">4</span>
+                Your Audio Output
+            </div>
+            <div id="successMessage" class="success-message">
+                ✅ Your text has been successfully converted to speech!
+            </div>
+            <div id="audioOutput" class="audio-output">
+                <p>🎵 Your audio file will appear here</p>
+                <audio id="audioPlayer" class="audio-player" controls style="display: none;">
+                    <source id="audioSource" src="" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <button id="downloadBtn" class="btn download-btn" style="display: none;">
+                    📥 Download Audio
+                </button>
+            </div>
+        </div>
+
+        <div class="step">
+            <button id="refreshBtn" class="btn refresh-btn">🔄 Start Over</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
